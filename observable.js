@@ -22,6 +22,16 @@
   obj.on("event2", callback3);
   obj.fire("event2", 1, 2); // 3
 
+  obj.one("one", function(){
+    console.log("first");
+    obj.one("one", function(){
+      console.log("second");
+    });
+  });
+
+  obj.fire("one");
+  obj.fire("one");
+
   function callback0(){
       console.log("I'm called!");
   }
@@ -89,7 +99,7 @@
       args.forEach(function(callback) {
         var index = callbacks.indexOf(callback);
         if(index >= 0) {
-          (event, ' undind: ', callbacks.splice(index, 1));
+          callbacks.splice(index, 1);
         }
       });
     }
@@ -97,14 +107,15 @@
     function fire(event) {
       var args = [].slice.call(arguments, 1);
       var callbacks = this[event] || [];
+      if (callbacks.unbind) {
+        callbacks = [].slice.call(this[event], 0)
+        unbind.call(this, event);
+      }
       callbacks.forEach(function(callback) {
         if (typeof callback === 'function') {
           callback.apply(null, args)
         }
       });
-      if (callbacks.unbind) {
-        unbind.call(this, event);
-      }
     }
   }
 
