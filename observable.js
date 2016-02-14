@@ -1,23 +1,26 @@
 (function(m) {
-  m.exports = observerFactory;
+  'use strict';
+  m.exports = observerFactory();
 
   function observerFactory() {
+    var storage = {};
     return observable;
 
     function observable(obj) {
-    var storage = {};
       return extend(obj, {
-        fire: fire.bind(storage),
-        one: one.bind(storage),
-        on: on.bind(storage),
-        unbind: unbind.bind(storage)
+        fire: fire,
+        one: one,
+        on: on,
+        unbind: unbind
       });
     }
 
     function extend(dst) {
       var key;
       var args = [].slice.call(arguments, 1);
-      dst || (dst = {});
+      if (!dst) {
+        dst = {};
+      }
       args.forEach(function (src) {
         for(key in src) {
           dst[key] = src[key];
@@ -28,21 +31,23 @@
 
     function on(event) {
       var args = [].slice.call(arguments, 1);
-      this[event] || (this[event] = []);
-      this[event] = this[event].concat(args);
+      if (!storage[event]) {
+        storage[event] = [];
+      }
+      storage[event] = storage[event].concat(args);
     }
 
     function one(event) {
-      on.apply(this, arguments);
-      this[event].unbind = true;
+      on.apply(storage, arguments);
+      storage[event].unbind = true;
     }
 
     function unbind(event) {
       var args = [].slice.call(arguments, 1);
-      var callbacks = this[event] || [];
+      var callbacks = storage[event] || [];
 
       if (!args.length || !callbacks.length) {
-        delete this[event];
+        delete storage[event];
         return;
       }
       args.forEach(function(callback) {
@@ -55,14 +60,14 @@
 
     function fire(event) {
       var args = [].slice.call(arguments, 1);
-      var callbacks = this[event] || [];
+      var callbacks = storage[event] || [];
       if (callbacks.unbind) {
-        callbacks = [].slice.call(this[event], 0)
-        unbind.call(this, event);
+        callbacks = [].slice.call(storage[event], 0);
+        unbind.call(storage, event);
       }
       callbacks.forEach(function(callback) {
         if (typeof callback === 'function') {
-          callback.apply(null, args)
+          callback.apply(null, args);
         }
       });
     }
